@@ -14,6 +14,8 @@ public:
   ~MsgBox();
   void draw();
   void addMsg(const char *msg);
+  void start();
+  void stop();
 
 private:
   WINDOW *msg_window;
@@ -23,6 +25,9 @@ private:
   bool newMsg = {false};
   bool stopped = {false};
   int nlines; // rows
+
+  void checkForMessages();
+  void mockMsgCheck();
 };
 } // namespace m_net
 
