@@ -4,11 +4,16 @@ OBJ=obj
 BIN=bin
 INCLUDE=include
 LIB=lib
-LDFLAGS=-L$(LIB)
-CCFLAGS=-I$(INCLUDE) -std=c++17
+LDFLAGS=-L$(LIB) -lncurses
+CCFLAGS=-I$(INCLUDE) -std=c++17 -D_XOPEN_SOURCE_EXTENDED
 
-SOURCES = main
-OBJECTS=$(foreach source,$(SOURCES),$(OBJ)/$(source).o)
+# SOURCES = main ui/chat_ui
+# OBJECTS=$(foreach source,$(SOURCES),$(OBJ)/$(source).o)
+
+SOURCES = $(shell find $(SRC) -name '*.cc')
+
+# Define object files with the appropriate path
+OBJECTS = $(SOURCES:$(SRC)/%.cc=$(OBJ)/%.o)
 
 
 all: main
@@ -18,7 +23,8 @@ main: $(OBJECTS)
 	$(CC) $^ -o $(BIN)/$@ $(LDFLAGS)
 
 $(OBJ)/%.o: $(SRC)/%.cc
-	[ -d $(OBJ) ] || mkdir -p $(OBJ)
+	@mkdir -p $(dir $@)        # Creating the directory if it doesn't exist
+	#[ -d $(OBJ) ] || mkdir -p $(OBJ)
 	$(CC) $(CCFLAGS) $^ -c -o $@
 
 clean:
