@@ -16,7 +16,26 @@ SOURCES = $(shell find $(SRC) -name '*.cc')
 OBJECTS = $(SOURCES:$(SRC)/%.cc=$(OBJ)/%.o)
 
 
+SERVER_SRCS = tcp_server tcp_echo_server
+SERVER_OBJS=$(foreach source,$(SERVER_SRCS),$(OBJ)/net/$(source).o)
+
+CLIENT_SRCS = tcp_client
+CLIENT_OBJS=$(foreach source,$(CLIENT_SRCS),$(OBJ)/net/$(source).o)
+
+TCP_SRCS = net_util tcp
+TCP_OBJS=$(foreach source,$(TCP_SRCS),$(OBJ)/net/$(source).o)
+
 all: main
+
+
+eserver: $(OBJ)/eserver.o $(SERVER_OBJS) $(TCP_OBJS)
+	[ -d $(BIN) ] || mkdir -p $(BIN)
+	$(CC) $^ -o $(BIN)/$@ $(LDFLAGS)
+
+eclient: $(OBJ)/eclient.o $(CLIENT_OBJS) $(TCP_OBJS)
+	[ -d $(BIN) ] || mkdir -p $(BIN)
+	$(CC) $^ -o $(BIN)/$@ $(LDFLAGS)
+
 
 main: $(OBJECTS)
 	[ -d $(BIN) ] || mkdir -p $(BIN)
