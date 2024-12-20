@@ -1,4 +1,6 @@
 #include <arpa/inet.h> // For inet_ntoa, if needed in other parts
+#include <iomanip>
+#include <iostream>
 #include <net/net_util.h>
 #include <netdb.h>      // For getaddrinfo and related functions
 #include <netinet/in.h> // For sockaddr_in
@@ -60,6 +62,23 @@ int get_listener_socket(int port) {
     return -1;
   }
   return listener;
+}
+
+void hexDump(const uint8_t *buffer, size_t length) {
+  for (size_t i = 0; i < length; ++i) {
+    // Print byte in hexadecimal format
+    std::cout << std::hex << std::setfill('0') << std::setw(2)
+              << static_cast<int>(buffer[i]) << " ";
+
+    // Print a new line every 16 bytes for readability
+    if ((i + 1) % 16 == 0) {
+      std::cout << std::endl;
+    }
+  }
+  // Ensure a newline at the end if the last line isn't complete
+  if (length % 16 != 0) {
+    std::cout << std::endl;
+  }
 }
 
 } // namespace m_net

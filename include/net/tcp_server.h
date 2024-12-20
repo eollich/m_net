@@ -12,7 +12,8 @@ public:
 
   bool setup(const std::string &ip, int port) override;
   void listenForConnections();
-  virtual void handleClientData(int client_fd, const std::string &data) = 0;
+  virtual void handleClientData(int client_fd, const uint8_t *buf,
+                                size_t nbytes) = 0;
 
 private:
   std::vector<pollfd> clients;

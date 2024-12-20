@@ -1,12 +1,12 @@
-#include <iostream>
 #include <net/tcp_echo_server.h>
 
 namespace m_net {
-void EchoServer::handleClientData(int client_fd, const std::string &data) {
-  std::cout << "Received from client: " << data << std::endl;
+void EchoServer::handleClientData(int client_fd, const uint8_t *buf,
+                                  size_t nbytes) {
+  // std::cout << "Received from client: " << buf << std::endl;
 
-  // echo data back to client
-  if (send(client_fd, data.c_str(), data.size(), 0) == -1) {
+  // Echo the raw data back to the client
+  if (send(client_fd, buf, nbytes, 0) == -1) {
     perror("send");
   }
 }

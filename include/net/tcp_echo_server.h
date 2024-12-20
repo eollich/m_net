@@ -5,7 +5,8 @@
 namespace m_net {
 class EchoServer : public TCPServer {
 protected:
-  void handleClientData(int client_fd, const std::string &data) override;
+  void handleClientData(int client_fd, const uint8_t *buf,
+                        size_t nbytes) override;
 };
 } // namespace m_net
 #endif

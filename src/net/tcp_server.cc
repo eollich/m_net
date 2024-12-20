@@ -78,7 +78,7 @@ void TCPServer::listenForConnections() {
             close(clients[i].fd);
             removeClient(i);
           } else {
-            handleClientData(clients[i].fd, std::string(buf, nbytes));
+            handleClientData(clients[i].fd, (uint8_t *)buf, nbytes);
           }
         }
       }

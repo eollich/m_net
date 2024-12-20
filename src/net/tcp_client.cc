@@ -1,4 +1,7 @@
+#include <net/net_util.h>
 #include <net/tcp_client.h>
+
+#define BUFF_SZ 512
 
 namespace m_net {
 
@@ -33,20 +36,38 @@ bool TCPClient::setup(const std::string &ip, int port) {
 }
 
 bool TCPClient::sendData(const std::string &data) {
-  if (send(sock_fd, data.c_str(), data.size(), 0) == -1) {
+
+  m_net_tcp_header_t header;
+  int cmd = 1;
+  uint8_t send_buffer[BUFF_SZ] = {};
+  initHeader(&header, cmd, data.c_str());
+  prepareReqPacket(&header, (uint8_t *)data.c_str(), data.size(), send_buffer,
+                   sizeof(send_buffer));
+
+  // if (send(sock_fd, data.c_str(), data.size(), 0) == -1) {
+  int sent = 0;
+  if ((sent = send(sock_fd, send_buffer, header.len, 0)) == -1) {
     perror("send");
     return false;
   }
+  std::cout << "SENT " << sent << " bytes " << std::endl;
   return true;
 }
 
 std::string TCPClient::receiveData() {
-  char buf[256];
-  int nbytes = recv(sock_fd, buf, sizeof(buf), 0);
+  uint8_t recv_buffer[BUFF_SZ];
+  // int nbytes = recv(sock_fd, buf, sizeof(buf), 0);
+  int nbytes = recv(sock_fd, recv_buffer, sizeof(recv_buffer), 0);
   if (nbytes <= 0) {
     return "";
   }
-  return std::string(buf, nbytes);
+  std::cout << "RECEIVED " << nbytes << " bytes " << std::endl;
+  m_net_tcp_header_t *pckt_pointer = (m_net_tcp_header_t *)recv_buffer;
+
+  uint8_t *msg_pointer = NULL;
+  uint16_t msg_len = 0;
+  processRecvPacket(pckt_pointer, recv_buffer, &msg_pointer, &msg_len);
+  return std::string(reinterpret_cast<const char *>(msg_pointer), msg_len);
 }
 
 } // namespace m_net
