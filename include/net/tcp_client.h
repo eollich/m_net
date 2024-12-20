@@ -11,7 +11,7 @@ public:
   ~TCPClient() override = default;
 
   bool setup(const std::string &ip, int port) override;
-  bool sendData(const std::string &data);
+  bool sendData(int cmd, const std::string &data);
   std::string receiveData();
 };
 

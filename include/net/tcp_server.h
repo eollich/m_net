@@ -16,11 +16,12 @@ public:
                                 size_t nbytes) = 0;
 
 private:
-  std::vector<pollfd> clients;
-  int fd_count;
-
   void addClient(int new_fd);
   void removeClient(int index);
+
+protected:
+  std::vector<pollfd> clients;
+  int fd_count;
 };
 } // namespace m_net
 

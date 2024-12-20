@@ -5,6 +5,15 @@
 
 #define M_NET_TCP_PROTO_VER_1 1
 #define M_NET_TCP_CMD_INIT 1
+#define M_NET_TCP_CMD_CREATE_ROOM 2
+#define M_NET_TCP_CMD_JOIN_ROOM 3
+
+#define M_NET_TCP_ROOM_CREATION 4
+#define M_NET_TCP_ROOM_JOINING 5
+
+#define M_NET_TCP_ERROR_OK 0
+#define M_NET_TCP_ERROR_ROOM_EXISTS 1
+#define M_NET_TCP_ERROR_ROOM_DNE 2
 
 namespace m_net {
 

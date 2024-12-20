@@ -15,7 +15,7 @@ int EchoClient::run() {
 
   std::string message;
   while (true) {
-    std::cout << "Enter message ('quit' to exit): ";
+    std::cout << "Enter message (';quit' to exit): ";
     std::getline(std::cin, message);
 
     if (message == ";quit") {
@@ -23,7 +23,7 @@ int EchoClient::run() {
       break;
     }
 
-    if (!client.sendData(message)) {
+    if (!client.sendData(1, message)) {
       std::cerr << "failed to send data" << std::endl;
       continue;
     }

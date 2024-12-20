@@ -4,6 +4,7 @@
 #include <arpa/inet.h>
 #include <cstring>
 #include <iostream>
+#include <net/net_util.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <poll.h>
@@ -33,6 +34,7 @@ protected:
     uint8_t proto_ver;
     uint8_t cmd;
     uint32_t len;
+    uint8_t error_code;
   } m_net_tcp_header_t;
 
   int port;
@@ -40,7 +42,8 @@ protected:
   int sock_fd;
 
   void initHeader(m_net_tcp_header_t *header, unsigned char req_cmd,
-                  const char *req_data);
+                  const char *req_data,
+                  uint8_t error_code = M_NET_TCP_ERROR_OK);
 
   int prepareReqPacket(m_net_tcp_header_t *header, uint8_t *payload,
                        uint16_t pay_len, uint8_t *packet, uint16_t packet_len);

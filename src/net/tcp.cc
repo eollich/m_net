@@ -13,10 +13,11 @@ TCP::~TCP() {
 }
 
 void TCP::initHeader(m_net_tcp_header_t *header, unsigned char req_cmd,
-                     const char *req_data) {
+                     const char *req_data, uint8_t error_code) {
   memset(header, 0, sizeof(m_net_tcp_header_t));
   header->proto_ver = M_NET_TCP_PROTO_VER_1;
   header->cmd = req_cmd;
+  header->error_code = error_code;
 
   switch (req_cmd) {
   case M_NET_TCP_CMD_INIT:
