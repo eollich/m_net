@@ -9,6 +9,7 @@ class MNetServer : public TCPServer {
 public:
   bool addRoom(std::string name);
   bool removeRoom(std::string name);
+  void registerCallbacks();
 
 protected:
   void handleClientData(int client_fd, const uint8_t *buf,

@@ -2,6 +2,12 @@
 
 namespace m_net {
 
+void TCPServer::notifyClientDisconnected(int fd) {
+  if (clientDisconnectedCallback) {
+    clientDisconnectedCallback(fd);
+  }
+}
+
 bool TCPServer::setup(const std::string &ip, int port) {
   struct addrinfo hints{}, *ai, *p;
   int yes = 1;
@@ -77,6 +83,7 @@ void TCPServer::listenForConnections() {
           if (nbytes <= 0) {
             close(clients[i].fd);
             removeClient(i);
+            notifyClientDisconnected(clients[i].fd);
           } else {
             handleClientData(clients[i].fd, (uint8_t *)buf, nbytes);
           }
@@ -98,6 +105,24 @@ void TCPServer::removeClient(int index) {
   clients[index] = clients[fd_count - 1];
   clients.pop_back();
   fd_count--;
+}
+
+void TCPServer::removeClientByFd(int fd) {
+  auto it = std::find_if(clients.begin(), clients.end(),
+                         [fd](const pollfd &pfd) { return pfd.fd == fd; });
+
+  if (it != clients.end()) {
+    std::cout << "Removing client with fd: " << fd << std::endl;
+
+    close(it->fd);
+    clients.erase(it);
+    --fd_count;
+
+    notifyClientDisconnected(fd);
+  } else {
+    std::cerr << "Client with fd " << fd << " not found in pollfds"
+              << std::endl;
+  }
 }
 
 } // namespace m_net

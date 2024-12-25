@@ -8,6 +8,21 @@
 
 namespace m_net {
 
+void MNetServer::registerCallbacks() {
+  setClientDisconnectedCallback([this](int fd) {
+    // Remove the room if the client is the creator
+    for (auto it = rooms.begin(); it != rooms.end();) {
+      if (it->second == fd) {
+        std::cout << "Removing room \"" << it->first
+                  << "\" due to creator disconnection." << std::endl;
+        it = rooms.erase(it);
+      } else {
+        ++it;
+      }
+    }
+  });
+}
+
 void MNetServer::removeClientByFd(int fd) {
   auto it = std::find_if(clients.begin(), clients.end(),
                          [fd](const pollfd &pfd) { return pfd.fd == fd; });
@@ -87,6 +102,9 @@ void MNetServer::handleClientData(int client_fd, const uint8_t *buf,
 
 int main() {
   m_net::MNetServer server;
+
+  // Register callbacks for client disconnection
+  server.registerCallbacks();
 
   // Start the server
   if (!server.setup("", 9034)) {
