@@ -84,7 +84,46 @@ int UDP::send(void *sbuff, int sbuff_sz) {
   return total_sent;
 }
 
-int UDP::recv(void *buff, int buff_sz) {}
+int UDP::recv(void *buff, int buff_sz) {
+  mnet_udp_pdu *in_pdu;
+  int total_received = 0;
+  char *rPtr = (char *)buff;
+  bool is_frag = false;
+
+  do {
+    int amountReceived = recvDatagram(buff, sizeof(buff));
+    if (amountReceived == M_NET_UDP_CONNECTION_CLOSED)
+      return amountReceived;
+    if (amountReceived < sizeof(mnet_udp_pdu))
+      return M_NET_UDP_ERROR_BAD_DGRAM;
+
+    in_pdu = (mnet_udp_pdu *)buff;
+
+    // overflow check
+    if (total_received + in_pdu->dgram_sz > buff_sz) {
+      return M_NET_UDP_BUFF_UNDERSIZED;
+    }
+
+    // calc size to copy for frag
+    int copy_size = (total_received + in_pdu->dgram_sz > buff_sz)
+                        ? buff_sz - total_received
+                        : in_pdu->dgram_sz;
+
+    // copy cur frag into buff
+    memcpy(rPtr, ((char *)buff + sizeof(mnet_udp_pdu)), copy_size);
+    rPtr += copy_size;
+    total_received += copy_size;
+
+    // check buff perfectly filled
+    if (total_received == buff_sz) {
+      return total_received;
+    }
+
+    is_frag = IS_MT_FRAGMENT(in_pdu->mtype);
+  } while (is_frag);
+
+  return total_received;
+}
 
 int UDP::listen() {}
 int UDP::connect() {}
@@ -174,6 +213,74 @@ int UDP::sendDatagram(void *sbuff, int sbuff_sz) {
   }
   return bytes_out - sizeof(mnet_udp_pdu);
 }
-int UDP::recvDatagram(void *buff, int buff_sz) {}
+int UDP::recvDatagram(void *buff, int buff_sz) {
+  int bytes_in = 0;
+  int err_code = M_NET_UDP_NO_ERROR;
+  if (buff_sz > M_NET_UDP_MAX_DGRAM_SZ) {
+    return M_NET_UDP_BUFF_OVERSIZED;
+  }
+  bytes_in = recvRaw(buff, buff_sz);
+
+  if (bytes_in < sizeof(mnet_udp_pdu)) {
+    err_code = M_NET_UDP_ERROR_BAD_DGRAM;
+  }
+
+  mnet_udp_pdu in_pdu = {0};
+  memcpy(&in_pdu, buff, sizeof(mnet_udp_pdu));
+  if (in_pdu.dgram_sz > buff_sz - sizeof(mnet_udp_pdu)) {
+    err_code = M_NET_UDP_BUFF_UNDERSIZED;
+  }
+
+  if (err_code == M_NET_UDP_NO_ERROR) {
+    if (in_pdu.dgram_sz == 0) {
+      conn->seq_num++;
+    } else {
+      conn->seq_num += in_pdu.dgram_sz;
+    }
+  } else {
+    conn->seq_num++;
+  }
+
+  mnet_udp_pdu out_pdu = {0};
+  out_pdu.proto_ver = M_NET_UDP_PROTO_VER_1;
+  out_pdu.dgram_sz = 0;
+  out_pdu.seqnum = conn->seq_num;
+  out_pdu.err_num = err_code;
+
+  int act_snd_sz = 0;
+
+  if (err_code != M_NET_UDP_NO_ERROR) {
+    out_pdu.mtype = M_NET_UDP_MT_ERROR;
+    act_snd_sz = sendRaw(&out_pdu, sizeof(mnet_udp_pdu));
+    if (act_snd_sz != sizeof(mnet_udp_pdu)) {
+      return M_NET_UDP_ERROR_PROTOCOL;
+    }
+  }
+
+  switch (in_pdu.mtype) {
+  case M_NET_UDP_MT_SNDFRAG:
+  case M_NET_UDP_MT_SND:
+    out_pdu.mtype = IS_MT_FRAGMENT(in_pdu.mtype) ? M_NET_UDP_MT_SNDFRAGACK
+                                                 : M_NET_UDP_MT_SNDACK;
+    act_snd_sz = sendRaw(&out_pdu, sizeof(mnet_udp_pdu));
+    if (act_snd_sz != sizeof(mnet_udp_pdu)) {
+      return M_NET_UDP_ERROR_GENERAL;
+    }
+    break;
+  case M_NET_UDP_MT_CLOSE:
+    out_pdu.mtype = M_NET_UDP_MT_CLOSEACK;
+    act_snd_sz = sendRaw(&out_pdu, sizeof(mnet_udp_pdu));
+    if (act_snd_sz != sizeof(mnet_udp_pdu)) {
+      return M_NET_UDP_ERROR_PROTOCOL;
+    }
+    closeConnection(conn);
+    return M_NET_UDP_CONNECTION_CLOSED;
+  default:
+    std::cerr << "recvDgram: Error! Unexpected or bad mtype in header: "
+              << in_pdu.mtype << std::endl;
+    return M_NET_UDP_ERROR_PROTOCOL;
+  }
+  return bytes_in;
+}
 
 } // namespace m_net
