@@ -91,7 +91,7 @@ private:
                       uint16_t *msg_len);
 
   int sendRaw(const void *sbuff, int sbuff_sz);
-  int recvRaw(int sock_fd, void *buff, int buff_sz, sockaddr_in *addr);
+  int recvRaw(void *buff, int buff_sz);
 
   int sendDatagram(void *sbuff, int sbuff_sz);
   int recvDatagram(void *buff, int buff_sz);

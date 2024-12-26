@@ -120,7 +120,23 @@ int UDP::sendRaw(const void *sbuff, int sbuff_sz) {
                      conn->out_sock_addr.len);
   return bytes_out;
 }
-int UDP::recvRaw(int sock_fd, void *buff, int buff_sz, sockaddr_in *addr) {}
+int UDP::recvRaw(void *buff, int buff_sz) {
+  int bytes = 0;
+  if (!conn || !conn->in_sock_addr.is_addr_init) {
+    perror("Connection or inbound address not setup properly");
+    return -1;
+  }
+  bytes = recvfrom(conn->udp_sock, (char *)buff, buff_sz, MSG_WAITALL,
+                   (struct sockaddr *)&(conn->out_sock_addr.addr),
+                   &(conn->out_sock_addr.len));
+  if (bytes < 0) {
+    perror("UDP recv raw: recevied error from recvfrom()");
+    return -1;
+  }
+  conn->out_sock_addr.is_addr_init = true;
+
+  return bytes;
+}
 
 int UDP::sendDatagram(void *sbuff, int sbuff_sz) {
   int snd_sz =
@@ -148,7 +164,7 @@ int UDP::sendDatagram(void *sbuff, int sbuff_sz) {
   }
 
   mnet_udp_pdu in_pdu = {0};
-  int bytes_in = recvRaw(conn, &in_pdu, sizeof(mnet_udp_pdu));
+  int bytes_in = recvRaw(&in_pdu, sizeof(mnet_udp_pdu));
   if ((bytes_in < sizeof(mnet_udp_pdu)) &&
       (in_pdu.mtype != M_NET_UDP_MT_SNDACK &&
        in_pdu.mtype != M_NET_UDP_MT_SNDFRAGACK)) {
