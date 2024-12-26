@@ -29,8 +29,16 @@ namespace m_net {
 #define IS_MT_FRAGMENT(x)                                                      \
   ((x & M_NET_UDP_MT_FRAGMENT) == M_NET_UDP_MT_FRAGMENT) // checks if fragment
 
+typedef struct {
+  int proto_ver;
+  int mtype;
+  int seqnum;
+  int dgram_sz;
+  int err_num;
+} mnet_udp_pdu;
+
 #define M_NET_UDP_MAX_BUFF_SZ 512
-#define M_NET_UDP_MAX_DGRAM_SZ (M_NET_UDP_MAX_BUFF_SZ + sizeof(dp_pdu))
+#define M_NET_UDP_MAX_DGRAM_SZ (M_NET_UDP_MAX_BUFF_SZ + sizeof(mnet_udp_pdu))
 
 #define M_NET_UDP_NO_ERROR 0
 #define M_NET_UDP_ERROR_GENERAL -1
@@ -47,7 +55,7 @@ struct mnet_sock {
 };
 
 typedef struct mnet_conn {
-  unsigned int seqNum;
+  unsigned int seq_num;
   int udp_sock;
   bool is_connected;
   struct mnet_sock out_sock_addr;
@@ -55,14 +63,6 @@ typedef struct mnet_conn {
 } mnet_conn;
 
 typedef struct mnet_conn *mnet_connp;
-
-typedef struct {
-  int proto_ver;
-  int mtype;
-  int seqnum;
-  int dgram_sz;
-  int err_num;
-} mnet_udp_pdu;
 
 class UDP {
 public:
@@ -90,14 +90,14 @@ private:
   uint32_t processPDU(const mnet_udp_pdu *pdu, uint8_t *buffer, uint8_t **msg,
                       uint16_t *msg_len);
 
-  int sendRaw(int sock_fd, const void *sbuff, int sbuff_sz,
-              const sockaddr_in *addr);
+  int sendRaw(const void *sbuff, int sbuff_sz);
   int recvRaw(int sock_fd, void *buff, int buff_sz, sockaddr_in *addr);
 
-  int sendDatagram(mnet_connp conn, void *sbuff, int sbuff_sz);
-  int recvDatagram(mnet_connp conn, void *buff, int buff_sz);
+  int sendDatagram(void *sbuff, int sbuff_sz);
+  int recvDatagram(void *buff, int buff_sz);
 
   mnet_connp conn;
+  char *buff;
 };
 
 } // namespace m_net
